@@ -46,7 +46,16 @@ class Perceptron(LinearModel):
         y_i (scalar): the gold label for that example
         other arguments are ignored
         """
-        raise NotImplementedError # Q1.1 (a)
+        # Compute the scores for all classes
+        scores = np.dot(self.W, x_i)  
+        
+        # Predict the class with the highest score
+        y_hat = np.argmax(scores)
+        
+        # Update weights if prediction is incorrect
+        if y_hat != y_i:
+            self.W[y_i] += x_i          # Increase weight for the true class
+            self.W[y_hat] -= x_i        # Decrease weight for the incorrect predicted class
 
 
 class LogisticRegression(LinearModel):
@@ -132,7 +141,7 @@ def main():
                         help="""Learning rate for parameter updates (needed for
                         logistic regression and MLP, but not perceptron)""")
     parser.add_argument('-l2_penalty', type=float, default=0.0,)
-    parser.add_argument('-data_path', type=str, default='intel_landscapes.npz',)
+    parser.add_argument('-data_path', type=str, default='intel_landscapes.v2.npz',)
     opt = parser.parse_args()
 
     utils.configure_seed(seed=42)
