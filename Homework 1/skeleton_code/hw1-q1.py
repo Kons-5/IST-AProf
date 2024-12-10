@@ -8,6 +8,7 @@ import argparse
 
 import numpy as np
 import matplotlib.pyplot as plt
+import matplotlib.ticker as ticker
 
 import time
 import utils
@@ -28,12 +29,12 @@ def softmax(scores):
     """
     Compute the softmax probabilities for a vector of scores
     """
-    exp_scores = np.exp(scores - np.max(scores)) # Prevent overflow (Check)
+    exp_scores = np.exp(scores - np.max(scores)) 
     return exp_scores / np.sum(exp_scores)
 
 def cross_entropy(y_hat, y_one_hot):
     """
-    Compute the cross-entropy loss using log-softmax for stability.
+    Compute the cross-entropy loss using log-softmax
     """
     log_probs = log_softmax(y_hat)
     return -np.dot(y_one_hot, log_probs)
@@ -56,7 +57,6 @@ def plot_loss(epochs, loss, filename=None):
     if filename:
         plt.savefig(filename, bbox_inches='tight')
     plt.show()
-
 
 def plot_w_norm(epochs, w_norms, filename=None):
     plt.xlabel('Epoch')
