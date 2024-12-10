@@ -16,12 +16,27 @@ import utils
 # Aux FUNCTIONS
 # ========================
 
+def log_softmax(x):
+    """
+    Compute the softmax probabilities for a vector of scores
+    While avoiding taking the log of zero
+    """
+    x_max = np.max(x)      
+    return x - x_max - np.log(np.sum(np.exp(x - x_max)))
+
 def softmax(scores):
     """
     Compute the softmax probabilities for a vector of scores
     """
     exp_scores = np.exp(scores - np.max(scores)) # Prevent overflow (Check)
     return exp_scores / np.sum(exp_scores)
+
+def cross_entropy(y_hat, y_one_hot):
+    """
+    Compute the cross-entropy loss using log-softmax for stability.
+    """
+    log_probs = log_softmax(y_hat)
+    return -np.dot(y_one_hot, log_probs)
 
 def plot(epochs, train_accs, val_accs, filename=None):
     plt.xlabel('Epoch')
@@ -136,13 +151,86 @@ class LogisticRegression(LinearModel):
 
 class MLP(object):
     def __init__(self, n_classes, n_features, hidden_size):
-        # Initialize an MLP with a single hidden layer.
-        raise NotImplementedError # Q1.3 (a)
+        """
+        Initialize weights and biases for a single hidden layer MLP.
+
+        Sizes:
+        W1:     (hidden_size, n_features)
+        W2:     (n_classes, hidden_size)
+        b1:     (hidden_size, )
+        b2:     (n_classes, )
+        """
+        
+        self.n_classes = n_classes
+        
+        # Input to hidden layer weights and biases
+        self.W1 = np.random.normal(loc=0.1, scale=0.1, size=(hidden_size, n_features))  
+        self.b1 = np.zeros(hidden_size) 
+
+        # Hidden to output weights and biases
+        self.W2 = np.random.normal(loc=0.1, scale=0.1, size=(n_classes, hidden_size))  
+        self.b2 = np.zeros(n_classes)  
+
+
+    def forward(self, X, save_hidden=False):
+        """
+        Perform the forward pass of the MLP.
+        
+        Sizes:
+        X:     (n_examples, n_features)
+        """
+        # Hidden layer pre-activation
+        z1 = np.dot(X, self.W1.T) + self.b1   # (n_examples,hidden_size)
+        
+        # Hidden layer activation (ReLU)
+        h1 = np.maximum(0, z1)                # (n_examples,hidden_size)
+        
+        # Output layer pre-activation
+        z2 = np.dot(h1, self.W2.T) + self.b2  # (n_examples, n_classes)
+        
+        # Return hidden activations only for backpropagation
+        return z2, h1 if save_hidden else None
+
+
+    def backward(self, x, y, probs, h1, learning_rate=0.001):
+        """
+        Perform backward propagation and update weights and biases for SGD.
+        """
+        
+        # Gradients for output layer
+        grad_z2 = probs - y                     # (n_classes,)
+        grad_W2 = np.outer(grad_z2, h1)         # (n_classes, hidden_size)
+        grad_b2 = grad_z2                       # (n_classes,)
+    
+        # Backpropagate to hidden layer
+        grad_h1 = np.dot(self.W2.T, grad_z2)    # (hidden_size,)
+        grad_z1 = grad_h1 * (h1 > 0)            # Apply ReLU derivative, (hidden_size,)
+    
+        # Gradients for input layer
+        grad_W1 = np.outer(grad_z1, x)          # (hidden_size, n_features)
+        grad_b1 = grad_z1                       # (hidden_size,)
+    
+        # Update weights and biases
+        self.W1 -= learning_rate * grad_W1
+        self.b1 -= learning_rate * grad_b1
+        self.W2 -= learning_rate * grad_W2
+        self.b2 -= learning_rate * grad_b2
+
 
     def predict(self, X):
-        # Compute the forward pass of the network. At prediction time, there is
-        # no need to save the values of hidden nodes.
-        raise NotImplementedError # Q1.3 (a)
+        """
+        Compute the forward pass of the network. At prediction time, there is
+        no need to save the values of hidden nodes.
+        
+        Sizes:
+        X:     (n_examples, n_features)    
+        """
+        
+        # Perform forward pass 
+        logits, _ = self.forward(X)        
+    
+        # Return predicted class indices
+        return np.argmax(logits, axis=1)
 
     def evaluate(self, X, y):
         """
@@ -157,9 +245,35 @@ class MLP(object):
 
     def train_epoch(self, X, y, learning_rate=0.001, **kwargs):
         """
-        Dont forget to return the loss of the epoch.
+        Train the model for one epoch using SGD and
+        return the loss of the epoch.
         """
-        raise NotImplementedError # Q1.3 (a)
+        
+        n_examples = y.shape[0]
+        loss = 0
+
+        # Process batch sizes = 1
+        for x, label in zip(X, y): 
+            
+            # create one-hot encoding for the label
+            y_one_hot = np.zeros(self.n_classes)     
+            y_one_hot[label] = 1 
+    
+            # Compute Forward pass
+            output, h = self.forward(x, True)
+
+            # Compute softmax probabilities for backpropagation
+            probs = softmax(output)
+    
+            # Compute cross-entropy loss using log-softmax
+            loss += cross_entropy(output, y_one_hot)
+    
+            # Compute Backward pass to update weights and biases
+            self.backward(x, y_one_hot, probs, h, learning_rate)
+
+        # Average the loss across all examples
+        loss /= n_examples
+        return loss
 
 # ========================
 # MAIN 
