@@ -14,7 +14,7 @@ import time
 import utils
 
 # ========================
-# Aux FUNCTIONS
+# AUX FUNCTIONS
 # ========================
 
 def log_softmax(x):
