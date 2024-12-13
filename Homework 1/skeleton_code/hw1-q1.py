@@ -143,7 +143,7 @@ class LogisticRegression(LinearModel):
 
         # Add L2 regularization to the gradient
         gradient += l2_penalty * self.W                     # If l2_penalty = 0.0 defaults to 
-                                                            #non-regularized version of the classifier.
+                                                            # non-regularized version of the classifier.
         
         # Update the weights with gradient descent
         self.W -= learning_rate * gradient
@@ -324,7 +324,6 @@ def main():
     train_X, train_y = data["train"]
     dev_X, dev_y = data["dev"]
     test_X, test_y = data["test"]
-
     n_classes = np.unique(train_y).size  
     n_feats = train_X.shape[1]  
 
@@ -416,7 +415,7 @@ def main():
     # PLOTTING
     # ===========================
 
-    results_dir = "Results"
+    results_dir = "1-Results"
     os.makedirs(results_dir, exist_ok=True)
     
     accuracy_plot_file = os.path.join(results_dir, f"Q1-{opt.model}-accs.pdf")
