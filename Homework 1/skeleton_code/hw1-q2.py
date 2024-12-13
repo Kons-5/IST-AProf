@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 
 # Deep Learning Homework 1
 
@@ -29,6 +29,7 @@ class LogisticRegression(nn.Module):
         super().__init__()
         # In a pytorch module, the declarations of layers needs to come after
         # the super __init__ line, otherwise the magic doesn't work.
+        self.linear = nn.Linear(n_features, n_classes)
 
     def forward(self, x, **kwargs):
         """
@@ -44,7 +45,7 @@ class LogisticRegression(nn.Module):
         forward pass -- this is enough for it to figure out how to do the
         backward pass.
         """
-        raise NotImplementedError
+        return self.linear(x)
 
 
 class FeedforwardNetwork(nn.Module):
@@ -64,8 +65,21 @@ class FeedforwardNetwork(nn.Module):
         includes modules for several activation functions and dropout as well.
         """
         super().__init__()
-        # Implement me!
-        raise NotImplementedError
+
+        self.in_layer = nn.Linear(n_features, hidden_size)
+        self.out_layer = nn.Linear(hidden_size, n_classes)
+        self.hidden_layers = nn.ModuleList()
+        for _ in range(layers - 1): 
+            self.hidden_layers.append(nn.Linear(hidden_size, hidden_size)) 
+        
+        self.dropout = nn.Dropout(p=dropout)
+
+        if activation_type == "relu":
+            self.activation = nn.ReLU()
+        elif activation_type == "tanh":
+            self.activation = nn.Tanh()
+        else:
+            pass
 
     def forward(self, x, **kwargs):
         """
@@ -75,7 +89,15 @@ class FeedforwardNetwork(nn.Module):
         the output logits from x. This will include using various hidden
         layers, pointwise nonlinear functions, and dropout.
         """
-        raise NotImplementedError
+        x = self.activation(self.in_layer(x))
+        x = self.dropout(x)
+        
+        #Hidden Layers
+        for layer in self.hidden_layers:
+            x = self.activation(layer(x))
+            x = self.dropout(x)
+
+        return self.out_layer(x)
 
 
 def train_batch(X, y, model, optimizer, criterion, **kwargs):
@@ -96,7 +118,15 @@ def train_batch(X, y, model, optimizer, criterion, **kwargs):
     This function should return the loss (tip: call loss.item()) to get the
     loss as a numerical value that is not part of the computation graph.
     """
-    raise NotImplementedError
+    optimizer.zero_grad()
+
+    y_pred = model(X)
+    loss = criterion(y_pred, y)
+
+    loss.backward()
+    optimizer.step()
+
+    return loss.item()
 
 
 def predict(model, X):
