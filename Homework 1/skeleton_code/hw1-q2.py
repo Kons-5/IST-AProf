@@ -18,7 +18,7 @@ import utils
 # AUX FUNCTIONS
 # ========================
 
-def plot(epochs, plottables, filename=None, ylim=None):
+def plot(epochs, plottables, ylabel, filename=None, ylim=None):
     """Plot the plottables over the epochs.
     
     Plottables is a dictionary mapping labels to lists of values.
@@ -28,6 +28,7 @@ def plot(epochs, plottables, filename=None, ylim=None):
     for label, plottable in plottables.items():
         plt.plot(epochs, plottable, label=label)
     plt.legend()
+    plt.ylabel(ylabel)
     if ylim:
         plt.ylim(ylim)
     if filename:
@@ -217,7 +218,7 @@ def main():
     parser.add_argument('-momentum', type=float, default=0.0)
     parser.add_argument('-activation', choices=['tanh', 'relu'], default='relu')
     parser.add_argument('-optimizer', choices=['sgd', 'adam'], default='sgd') 
-    parser.add_argument('-data_path', type=str, default='intel_landscapes.npz')
+    parser.add_argument('-data_path', type=str, default='intel_landscapes.v2.npz')
     
     opt = parser.parse_args()
 
@@ -339,16 +340,16 @@ def main():
         )
     
     losses = {
-        "Train Loss": train_losses,
-        "Valid Loss": valid_losses,
+        "train": train_losses,
+        "validation": valid_losses,
     }
     
-    plot(epochs, losses, 
+    plot(epochs, losses, "Loss", 
         filename=os.path.join(results_dir, f'{opt.model}-training-loss-{config}.pdf')
     )
-    accuracy = {"Valid Accuracy": valid_accs}
+    accuracy = {"validation": valid_accs}
     
-    plot(epochs, accuracy, 
+    plot(epochs, accuracy, "Accuracy", 
         filename=os.path.join(results_dir, f'{opt.model}-validation-accuracy-{config}.pdf')
     )
 
